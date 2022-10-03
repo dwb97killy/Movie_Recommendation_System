@@ -1,0 +1,169 @@
+class(user).
+
+class(male_user).
+class(male_user).
+
+is_subclass(male_user, user).
+is_subclass(female_user, user).
+
+class(movie).
+
+class(action).
+class(romance).
+class(horror).
+class(fiction).
+class(drama).
+class(comedy).
+class(adventure).
+class(animation).
+class(superhero).
+class(western_movies).
+class(war_movie).
+
+is_subclass(action, movie).
+is_subclass(romance, movie).
+is_subclass(horror, movie).
+is_subclass(fiction, movie).
+is_subclass(drama, movie).
+is_subclass(comedy, movie).
+is_subclass(adventure, movie).
+is_subclass(animation, movie).
+is_subclass(superhero, movie).
+is_subclass(western_movies, movie).
+is_subclass(war_movie, movie).
+
+subclass(C1, C2) :-  is_subclass(C1, C2).
+subclass(C1, C2) :-  is_subclass(C1, C3), subclass(C3, C2).
+not_subclass(C1, C2) :- class(C1), class(C2), not subclass(C1, C2).
+
+member(X, C) :- is_a(X, C).
+member(X, C) :- is_a(X, C0), subclass(C0, C).
+not_member(X, C) :- member(X, C1), siblings(C1, C2), not equal(C1, C2).
+
+siblings(C1, C2) :- is_subclass(C1, C), is_subclass(C2, C), not equal(C1, C2). 
+
+abs(X, X) :- X >= 0.
+abs(X, Y) :- X < 0, Y is 0 - X.
+
+equal(X, Y) :- X = Y.
+
+append([], L, L).
+append([H | T], Y, [H | Z]) :- append(T, Y, Z).
+
+member_1(X, [X|_]).
+member_1(X, [H|T]) :- member_1(X, T).
+not_member_1(X, Y) :- not member_1(X, Y).
+
+list_length([], 0).
+list_length([_|Xs], L) :- list_length(Xs, N), L is N + 1 .
+
+:- check_rate(X, Y, R, []).
+check_rate(X, Y, R, [[X, Y, R]|T]).
+check_rate(X, Y, R, [H|T]) :- check_rate(X, Y, R, T).
+%check_rate(X, Y, R, [[H1, H2, H3]|T]) :- object(X), member(X, user), object(Y), member(Y, movie), X \= H1, Y = H2, check_rate(X, Y, R, T).
+%check_rate(X, Y, R, [[H1, H2, H3]|T]) :- object(X), member(X, user), object(Y), member(Y, movie), X = H1, Y \= H2, check_rate(X, Y, R, T).
+%check_rate(X, Y, R, [[H1, H2, H3]|T]) :- object(X), member(X, user), object(Y), member(Y, movie), X \= H1, Y \= H2, check_rate(X, Y, R, T).
+
+:- existence(X, Y, []).
+existence(X, Y, [[X, Y, R]|T]).
+existence(X, Y, [H|T]) :- existence(X, Y, T).
+
+user_average_rate(X, 0, 0, [], L). 
+user_average_rate(X, S, N, [Y|T], L) :- object(X), member(X, user), object(Y), member(Y, movie), check_rate(X, Y, R, L), R > 0, N = N1 + 1, S = S1 + R, user_average_rate(X, S1, N1, T, L). 
+user_average_rate(X, S, N, [Y|T], L) :- object(X), member(X, user), object(Y), member(Y, movie), check_rate(X, Y, R, L), R = 0, user_average_rate(X, S, N, T, L). 
+
+item_average_rate(X, 0, 0, []). 
+item_average_rate(X, S, N, [Y|T]) :- object(Y), member(Y, user), object(X), member(X, movie), check_rate(Y, X, R), N = N1 + 1, S = S1 + R, item_average_rate(X, S1, N1, T). 
+item_average_rate(X, S, N, [Y|T]) :- object(Y), member(Y, user), object(X), member(X, movie), not_check_rate(Y, X),  item_average_rate(X, S, N, T). 
+
+%trash(L) :- rate(L).
+
+same_gender(X, Y, Z) :- object(X), member(X, Z1), object(Y), member(Y, Z2), subclass(Z1, user), subclass(Z2, user), not siblings(Z1, Z2), Z = 5.
+same_gender(X, Y, Z) :- object(X), member(X, Z1), object(Y), member(Y, Z2), subclass(Z1, user), subclass(Z2, user), siblings(Z1, Z2), Z = 0.
+
+rate_similar(X, Y, Z) :- movie_list(L), rate(L1), user_average_rate(X, S1, N1, L, L1), user_average_rate(Y, S2, N2, L, L1), A1 = S1 / N1, A2 = S2 / N2, A3 = 5 - (A1 - A2), abs(A3, Z).
+
+user_cate(X, [], []).
+user_cate(X, [[H1, H2, H3]|T], [Z|L1]) :- object(X), member(X, user), X = H1, H3 > 0, object(H2), member(H2, Z), subclass(Z, movie), user_cate(X, T, L1).
+%user_cate(X, [[H1, H2, H3]|T], L) :- user_cate(X, T, L).
+user_cate(X, [[H1, H2, H3]|T], L) :- object(X), member(X, user), X = H1, H3 = 0, user_cate(X, T, L).
+user_cate(X, [[H1, H2, H3]|T], L) :- object(X), member(X, user), X \= H1, user_cate(X, T, L). 
+
+cate_similar(X, Y, Z) :- rate(L1), user_cate(X, L1, L2), user_cate(Y, L1, L3), cate_similar_1(L2, L3, Z).
+
+cate_similar_1([], L, 0).
+cate_similar_1([H|T], L, Z) :- Z = Z1 + Z2, cate_similar_2(H, L, Z1), cate_similar_1(T, L, Z2).
+
+cate_similar_2(H, L, Z) :- member_1(H, L), Z is 1.
+cate_similar_2(H, L, Z) :- not member_1(H, L), Z is 0.
+
+user_similar(X, Y, Z) :- object(X), member(X, user), object(Y), member(Y, user), same_gender(X, Y, Z1), rate_similar(X, Y, Z2), cate_similar(X, Y, Z3), Z = Z1 + Z2 + Z3.
+
+user_recommendation(X, Q) :- user_list(Y), user_recommendation(X, Y, Q). 
+user_recommendation(X, [], []).
+user_recommendation(X, [Y|T], [Q1|Q2]) :- object(X), member(X, user), object(Y), member(Y, user), X \= Y, user_similar(X, Y, Z), Z >= 10, rate(L), add_list(X, Y, L, Q1), user_recommendation(X, T, Q2).
+%user_recommendation(X, [Y|T], Q) :- object(X), member(X, user), object(Y), member(Y, user), X \= Y, user_similar(X, Y, Z), 10 > Z, user_recommendation(X, T, Q).
+user_recommendation(X, [Y|T], Q) :- object(X), member(X, user), object(Y), member(Y, user), user_recommendation(X, T, Q).
+
+add_list(X, Y, [], []). 
+add_list(X, Y, [[H1, H2, H3]|T], [H2|Q]) :- Y = H1, H3 > 6, add_list(X, Y, T, Q).
+add_list(X, Y, [[H1, H2, H3]|T], Q) :- Y = H1, 6 >= H3, add_list(X, Y, T, Q).
+add_list(X, Y, [[H1, H2, H3]|T], Q) :- Y \= H1, add_list(X, Y, T, Q).
+
+object(a1).
+object(b1).
+object(c1).
+object(d1).
+object(e1).
+object(f1).
+
+is_a(a1, male_user).
+is_a(b1, male_user).
+is_a(c1, male_user).
+is_a(d1, female_user).
+is_a(e1, female_user).
+is_a(f1, female_user).
+
+
+object(a2).
+object(b2).
+object(c2).
+object(d2).
+object(e2).
+object(f2).
+object(g2).
+object(h2).
+object(i2).
+object(j2).
+object(k2).
+
+is_a(a2, action).
+is_a(b2, romance).
+is_a(c2, horror).
+is_a(d2, fiction).
+is_a(e2, drama).
+is_a(f2, comedy).
+is_a(g2, adventure).
+is_a(h2, animation).
+is_a(i2, superhero).
+is_a(j2, western_movies).
+is_a(k2, war_movie).
+
+rate([
+[a1, a2, 8], [a1, b2, 7], [a1, c2, 0], [a1, d2, 9], [a1, e2, 0], [a1, f2, 5], [a1, g2, 0], [a1, h2, 0], [a1, i2, 0], [a1, j2, 0], [a1, k2, 0],
+[b1, a2, 7], [b1, b2, 0], [b1, c2, 6], [b1, d2, 0], [b1, e2, 9], [b1, f2, 0], [b1, g2, 0], [b1, h2, 0], [b1, i2, 0], [b1, j2, 0], [b1, k2, 7],
+[c1, a2, 0], [c1, b2, 0], [c1, c2, 0], [c1, d2, 4], [c1, e2, 0], [c1, f2, 0], [c1, g2, 8], [c1, h2, 3], [c1, i2, 9], [c1, j2, 7], [c1, k2, 10],
+[d1, a2, 0], [d1, b2, 6], [d1, c2, 0], [d1, d2, 0], [d1, e2, 7], [d1, f2, 0], [d1, g2, 0], [d1, h2, 3], [d1, i2, 0], [d1, j2, 0], [d1, k2, 8],
+[e1, a2, 7], [e1, b2, 0], [e1, c2, 0], [e1, d2, 0], [e1, e2, 0], [e1, f2, 7], [e1, g2, 0], [e1, h2, 0], [e1, i2, 9], [e1, j2, 9], [e1, k2, 3],
+[f1, a2, 0], [f1, b2, 0], [f1, c2, 0], [f1, d2, 5], [f1, e2, 0], [f1, f2, 8], [f1, g2, 4], [f1, h2, 9], [f1, i2, 8], [f1, j2, 6], [f1, k2, 0]
+]).
+%user_list([a1, b1, c1, d1, e1, f1]).
+user_list([a1, b1, c1, d1, e1, f1]).
+movie_list([a2, b2, c2, d2, e2, f2, g2, h2, i2, j2, k2]).
+
+
+
+
+
+
+
